@@ -42,7 +42,7 @@ class Venue(models.Model):
     type = models.CharField(max_length=255, null=True)
     # worksYearArr = ArrayField(models.IntegerField(default=0), size=10)
     # citedYearArr = ArrayField(models.IntegerField(default=0), size=10)
-    worksCount = models.IntegerField(default=0)
+    work_count = models.IntegerField(default=0)
     created_time = models.DateTimeField('创建时间', auto_now_add=True)
     updated_time = models.DateTimeField('更新时间', auto_now=True)
 
@@ -57,7 +57,7 @@ class Institution(models.Model):
     type = models.CharField(max_length=255, null=True)
     # worksYearArr = ArrayField(models.IntegerField(default=0), size=10)
     # citedYearArr = ArrayField(models.IntegerField(default=0), size=10)
-    worksCount = models.IntegerField(default=0)
+    work_count = models.IntegerField(default=0)
     created_time = models.DateTimeField('创建时间', auto_now_add=True)
     updated_time = models.DateTimeField('更新时间', auto_now=True)
 
