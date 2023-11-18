@@ -7,6 +7,8 @@ from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.utils import timezone
 from diophila import OpenAlex
 # Create your models here.
+from Essay.models import Author
+
 
 gender_choices = [
     ('male','male'),
@@ -18,3 +20,10 @@ class User(AbstractUser):
     description = models.CharField(max_length=1000, null=True, blank=True)
     avatar = models.ImageField(upload_to='avatar/',default='avatar/default.jpg', blank=True)
     register_date = models.DateTimeField(auto_now_add=True)
+
+    is_professor = models.BooleanField(default=False)
+    author = models.ForeignKey(Author,on_delete=models.CASCADE,related_name='author',null=True,blank=True) # 作者,开始可以为空
+    work_count = models.IntegerField(default=0)
+    
+
+    unread_message_count = models.IntegerField(default=0)
