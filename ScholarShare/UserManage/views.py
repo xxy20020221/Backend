@@ -40,7 +40,7 @@ class UserRegisterView(APIView):
             user = serializer.save()
             if user:
                 token = Token.objects.create(user=user)
-                json=serializer.data
+                json = serializer.data
                 json['token'] = token.key
                 
                 return Response(json, status=status.HTTP_201_CREATED)

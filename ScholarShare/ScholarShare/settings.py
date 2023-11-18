@@ -44,6 +44,12 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework.authtoken",
     "UserManage",
+    "Comment",
+    "Analysis",
+    "Collection",
+    "Essay",
+    "Follow",
+    "Message",
 ]
 
 MIDDLEWARE = [
@@ -111,7 +117,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'ScholarShareCore',
         'USER': 'root',
-        'PASSWORD': 'loushang501',
+        'PASSWORD': '123456',
         'HOST': '127.0.0.1',
         'PORT': '3306',
     }
