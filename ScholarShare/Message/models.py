@@ -15,9 +15,9 @@ class Message(models.Model):
     type = models.IntegerField(default=0) 
     # 消息类型： 0表示申请通过，1表示申请拒绝，2表示有消息被回复，3表示有解析被上传，4表示有文章被回复，5表示有有用户关注了你
 
-    author = models.ForeignKey(Author,on_delete=models.CASCADE,related_name='author',null=True) # 作者id
-    institution = models.ForeignKey(Institution,on_delete=models.CASCADE,related_name='institution',null=True) # 机构id
-    work = models.ForeignKey(Work,on_delete=models.CASCADE,related_name='work',null=True) # 文章id
+    author = models.ForeignKey(Author,on_delete=models.CASCADE,related_name='message_author',null=True) # 作者id
+    institution = models.ForeignKey(Institution,on_delete=models.CASCADE,related_name='message_institution',null=True) # 机构id
+    work = models.ForeignKey(Work,on_delete=models.CASCADE,related_name='message_work',null=True) # 文章id
 
     content = models.TextField(max_length=1024,default="")  #消息内容
     reply = models.TextField(max_length=1024,default="")  #回复内容(如果是回复消息的话)
