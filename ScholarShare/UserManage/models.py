@@ -8,7 +8,6 @@ from django.utils import timezone
 from diophila import OpenAlex
 # Create your models here.
 from Essay.models import Author
-from Follow.models import Follow
 
 gender_choices = [
     ('male','male'),
@@ -25,5 +24,4 @@ class User(AbstractUser):
     author = models.ForeignKey(Author,on_delete=models.CASCADE,related_name='author',null=True,blank=True) # 作者,开始可以为空
     work_count = models.IntegerField(default=0)
     
-    followed_author = models.ManyToManyField(Author,through=Follow,related_name="followd_author",null=True)
     unread_message_count = models.IntegerField(default=0)

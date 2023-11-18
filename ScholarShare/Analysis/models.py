@@ -1,7 +1,7 @@
 from django.db import models
 
-from ScholarShare.Essay.models import Work
-from ScholarShare.UserManage.models import User
+from Essay.models import Work
+from UserManage.models import User
 
 
 # Create your models here.
