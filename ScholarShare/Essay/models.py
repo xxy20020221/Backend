@@ -19,7 +19,7 @@ class Author(models.Model):
 
 class Work(models.Model):
     author = models.ForeignKey("Author", on_delete=models.CASCADE)
-    open_alex_id = models.CharField('对应作品的open_alex_id', primary_key=True, max_length=200, db_index=True,
+    open_alex_id = models.CharField('对应作品的open_alex_id', max_length=200, db_index=True,
                                     default='')
     cited_by_count = models.IntegerField(default=0)
     # yearArr = ArrayField(models.IntegerField(default=0), size=10)
@@ -37,7 +37,7 @@ class Work(models.Model):
 
 
 class Venue(models.Model):
-    open_alex_id = models.CharField('对应Source的open_alex_id', primary_key=True, max_length=200, db_index=True,
+    open_alex_id = models.CharField('对应Source的open_alex_id', max_length=200, db_index=True,
                                     default='')
     type = models.CharField(max_length=255, null=True)
     # worksYearArr = ArrayField(models.IntegerField(default=0), size=10)
@@ -51,7 +51,7 @@ class Venue(models.Model):
 
 
 class Institution(models.Model):
-    open_alex_id = models.CharField('对应机构的open_alex_id', primary_key=True, max_length=200, db_index=True,
+    open_alex_id = models.CharField('对应机构的open_alex_id', max_length=200, db_index=True,
                                     default='')
     country_code = models.CharField(max_length=200, null=True)
     type = models.CharField(max_length=255, null=True)
@@ -66,7 +66,7 @@ class Institution(models.Model):
 
 
 class Concept(models.Model):
-    open_alex_id = models.CharField('对应的open_alex_id', primary_key=True, max_length=200, db_index=True,
+    open_alex_id = models.CharField('对应的open_alex_id', max_length=200, db_index=True,
                                     default='')
     cited_by_count = models.IntegerField(default=0)
     # worksYearArr = ArrayField(models.IntegerField(default=0), size=10)
