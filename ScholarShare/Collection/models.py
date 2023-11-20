@@ -14,9 +14,9 @@ class ColletionPackage(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE,related_name='user') # 自己的id
     works = models.ManyToManyField(Work,through='CollectionWork',related_name="collection_package_work",blank=True)
     anaylsis = models.ManyToManyField(Analysis,through='CollectionAnalysis',related_name="collection_package_analysis",blank=True)
-    created_time = models.DateTimeField(auto_now_add=True) # 评论时间
-    name = models.CharField(max_length=100,default="")  #评论内容
-    sum = models.IntegerField(default=0)  #评论数量
+    created_time = models.DateTimeField(auto_now_add=True) # 创建时间
+    name = models.CharField(max_length=100,default="")  #创建名字
+    sum = models.IntegerField(default=0)  #文件总数
 
 
 class CollectionWork(models.Model):
