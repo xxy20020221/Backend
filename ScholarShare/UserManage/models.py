@@ -23,5 +23,6 @@ class User(AbstractUser):
     is_professor = models.BooleanField(default=False)
     author = models.ForeignKey(Author,on_delete=models.CASCADE,related_name='author',null=True,blank=True) # 作者,开始可以为空
     work_count = models.IntegerField(default=0)
+    is_administrators = models.BooleanField(default=False)
     
     unread_message_count = models.IntegerField(default=0)
