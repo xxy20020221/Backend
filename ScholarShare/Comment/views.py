@@ -123,7 +123,7 @@ def get_comment_on_analysis(request, analysis_id):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def comment_on_analysis(request, comment_id):
+def comment_on_comment(request, comment_id):
     # 在评论下面评论
     comment_id = int(comment_id)
     content = request.data.get('data')
@@ -153,7 +153,7 @@ def comment_on_analysis(request, comment_id):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_comment_on_analysis(request, comment_id):
+def get_comment_on_comment(request, comment_id):
     # 获取评论下的评论
     comment_id = int(comment_id)
     try:
@@ -161,3 +161,15 @@ def get_comment_on_analysis(request, comment_id):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     return Response(list_model_to_dict(comments), status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def remove_comments(request, comment_id):
+    comment_id = int(comment_id)
+    try:
+        Comment.objects.get(id=comment_id).delete()
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({"message": "Comment complete", },
+                    status=status.HTTP_200_OK)
