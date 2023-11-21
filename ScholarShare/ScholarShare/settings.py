@@ -117,7 +117,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'ScholarShareCore',
         'USER': 'root',
-        'PASSWORD': '123456',
+        'PASSWORD': 'Zz11235813',
         'HOST': '127.0.0.1',
         'PORT': '3306',
     }
