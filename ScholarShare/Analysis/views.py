@@ -82,7 +82,7 @@ def examine_analysis(request, message_id):
         analysis.save()
 
     try:
-        Message.objects.create(
+        message1 = Message.objects.create(
             receiver=analysis.user,
             type=flag + 7,
             content=str,
@@ -91,7 +91,7 @@ def examine_analysis(request, message_id):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    return Response({"message": "Examination complete", "id": message.id},
+    return Response({"message": "Examination complete", "id": message1.id},
                     status=status.HTTP_201_CREATED)
 
 
@@ -126,6 +126,7 @@ def get_analysis(request, work_id):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_analysis_one(request, analysis_id):
+    # 获取某个解析
     analysis_id = int(analysis_id)
     try:
         analysis = Analysis.objects.get(id=analysis_id)

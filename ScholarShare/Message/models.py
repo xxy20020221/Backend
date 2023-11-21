@@ -15,7 +15,7 @@ class Message(models.Model):
     send_time = models.DateTimeField(auto_now_add=True) # 评论时间
     type = models.IntegerField(default=0)
     analysis = models.ForeignKey(Analysis, on_delete=models.CASCADE, related_name='analysis',null=True) #解析id
-    # 消息类型： 0表示申请通过，1表示申请拒绝，2表示有消息被回复，3表示有解析被上传，4表示有文章被回复，5表示有有用户关注了你, 6表示有解析需要被审核,7表示解析审核失败,8表示解析审核成功
+    # 消息类型： 0表示申请通过，1表示申请拒绝，2表示有消息被回复，3表示有解析被上传，4表示有文章被回复，5表示有有用户关注了你, 6表示有解析需要被审核,7表示解析审核失败,8表示解析审核成功, 9表示有解析被回复
 
     author = models.ForeignKey(Author,on_delete=models.CASCADE,related_name='message_author',null=True) # 作者id
     institution = models.ForeignKey(Institution,on_delete=models.CASCADE,related_name='message_institution',null=True) # 机构id
