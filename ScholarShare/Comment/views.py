@@ -60,6 +60,8 @@ def comment_on_work(request, work_id):
             content=content,
             work=work_id,
         )
+        user.unread_message_count += 1
+        user.update()
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -103,6 +105,8 @@ def comment_on_analysis(request, analysis_id):
             content=content,
             analysis=analysis
         )
+        analysis.user.unread_message_count += 1
+        analysis.user.update()
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     return Response({"message": "Comment complete", "id": comment.id},
@@ -145,6 +149,8 @@ def comment_on_comment(request, comment_id):
             content=comment.content,
             reply=content
         )
+        comment.user.unread_message_count += 1
+        comment.user.update()
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     return Response({"message": "Comment complete", "id": comment.id},
