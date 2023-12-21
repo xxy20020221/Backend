@@ -33,49 +33,53 @@ from Message.models import *
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def comment_on_work(request, work_id):
+def comment_on_work(request):
     # 在论文下面评论
-    work_id = int(work_id)
+    work_id = request.data.get("openalex_id")
+    
     content = request.data.get('data')
     try:
         comment = CommentToWork.objects.create(
-            work=work_id,
+            work_openalex_id=work_id,
             content=content,
-            user=request.user.id
+            user=request.user
         )
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    work = Work.objects.get(id=work_id)
-    try:
-        user = User.objects.get(author__work=work)
-    except Exception as e:
-        return Response({"message": "Comment complete", "id": comment.id},
-                        status=status.HTTP_201_CREATED)
-    try:
-        Message.objects.create(
-            receiver=user,
-            sender=request.user.id,
-            type=4,
-            content=content,
-            work=work_id,
-        )
-        user.unread_message_count += 1
-        user.save
-    except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
+    
     return Response({"message": "Comment complete", "id": comment.id},
-                    status=status.HTTP_201_CREATED)
+                status=status.HTTP_201_CREATED)
+
+    # work = Work.objects.filter(id=work_id)
+    # try:
+    #     user = User.objects.get(author__work=work)
+    # except Exception as e:
+    #     return Response({"message": "Comment complete", "id": comment.id},
+    #                     status=status.HTTP_201_CREATED)
+    # try:
+    #     Message.objects.create(
+    #         receiver=user,
+    #         sender=request.user.id,
+    #         type=4,
+    #         content=content,
+    #         work=work_id,
+    #     )
+    #     user.unread_message_count += 1
+    #     user.save
+    # except Exception as e:
+    #     return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    # return Response({"message": "Comment complete", "id": comment.id},
+    #                 status=status.HTTP_201_CREATED)
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_comment_on_work(request, work_id):
+def get_comment_on_work(request, openalex_id):
     # 获取论文下的评论
-    work_id = int(work_id)
+    work_id = openalex_id
     try:
-        comments = CommentToWork.objects.filter(work=work_id)
+        comments = CommentToWork.objects.filter(work_openalex_id=work_id)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     return Response(list_model_to_dict(comments), status=status.HTTP_200_OK)
@@ -85,14 +89,14 @@ def get_comment_on_work(request, work_id):
 @permission_classes([IsAuthenticated])
 def comment_on_analysis(request, analysis_id):
     # 在解析下面评论
-    work_id = int(analysis_id)
+    work_id = int(request.data.get('analysis_id'))
     content = request.data.get('data')
-    analysis = Analysis.objects.get(works=work_id)
+    analysis = Analysis.objects.filter(id=work_id).first()
     try:
         comment = CommentToAnalysis.objects.create(
-            analysis=work_id,
+            analysis=analysis,
             content=content,
-            user=request.user.id,
+            user=request.user,
             type=1
         )
     except Exception as e:
@@ -100,13 +104,13 @@ def comment_on_analysis(request, analysis_id):
     try:
         Message.objects.create(
             receiver=analysis.user,
-            sender=request.user.id,
+            sender=request.user,
             type=9,
             content=content,
             analysis=analysis
         )
         analysis.user.unread_message_count += 1
-        analysis.user.save
+        analysis.user.save()
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     return Response({"message": "Comment complete", "id": comment.id},
@@ -116,7 +120,7 @@ def comment_on_analysis(request, analysis_id):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_comment_on_analysis(request, analysis_id):
-    # 获取论文下的评论
+    # 获取解析下的评论
     work_id = int(analysis_id)
     try:
         comments = CommentToAnalysis.objects.filter(analysis=work_id)
@@ -127,16 +131,17 @@ def get_comment_on_analysis(request, analysis_id):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def comment_on_comment(request, comment_id):
+def comment_on_comment(request):
     # 在评论下面评论
-    comment_id = int(comment_id)
+    comment_id = int(request.data.get('comment_id'))
     content = request.data.get('data')
     comment = Comment.objects.get(id=comment_id)
     try:
-        comment = CommentToComment.objects.create(
+        comment_back = CommentToComment.objects.create(
             father=comment,
+            
             content=content,
-            user=request.user.id,
+            user=request.user,
             type=2
         )
     except Exception as e:
@@ -144,13 +149,13 @@ def comment_on_comment(request, comment_id):
     try:
         Message.objects.create(
             receiver=comment.user,
-            sender=request.user.id,
+            sender=request.user,
             type=2,
             content=comment.content,
             reply=content
         )
         comment.user.unread_message_count += 1
-        comment.user.save
+        comment.user.save()
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     return Response({"message": "Comment complete", "id": comment.id},

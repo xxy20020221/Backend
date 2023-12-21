@@ -24,6 +24,7 @@ urlpatterns = [
     path('api/', include('UserManage.urls', namespace='UserManage')),
     path('api/', include('Essay.urls', namespace='Essay')),
     path('api/', include('Collection.urls', namespace='Collection')),
+    path('api/',include('Comment.urls',namespace='Comment')),
 ]
 
 if settings.DEBUG:

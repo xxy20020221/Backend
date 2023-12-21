@@ -21,13 +21,14 @@ class Comment(models.Model):
 
 
 class CommentToWork(Comment):
-    work = models.ForeignKey(Work,on_delete=models.CASCADE,related_name='comment_to_work',null=True,blank=True) # 文章id
+    work_openalex_id = models.CharField(max_length=100,default="",null=True) # 文章id
 
 class CommentToAnalysis(Comment):
     analysis = models.ForeignKey(Analysis,on_delete=models.CASCADE,related_name='comment_to_analysis',null=True,blank=True) # 解析id
 
 class CommentToComment(Comment):
-    father = models.ForeignKey(Comment,on_delete=models.CASCADE,related_name='children',null=True,blank=True) # 上级work或analysis的id
-    comment = models.ForeignKey(Comment,on_delete=models.CASCADE,related_name='comment_to_comment',null=True,blank=True) # 父评论id
+    work_openalex_id = models.CharField(max_length=100,default="",null=True) # 文章id
+    analysis = models.ForeignKey(Analysis,on_delete=models.CASCADE,related_name='anaylysis_comment_father',null=True,blank=True)
+    father = models.ForeignKey(Comment,on_delete=models.CASCADE,related_name='comment_to_comment',null=True,blank=True) # 父评论id
 
     
