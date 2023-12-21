@@ -37,25 +37,47 @@ from utils.tools import list_model_to_dict
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def create_analysis(request, essay_id):
+def create_analysis(request):
     # 创建解析，需要上传文件与其url
     # file = request.data.get('file')
-    essay_id = int(essay_id)
-    file_url = request.data.get('file_url')
-    works = Work.objects.get(id=essay_id)
-    title = request.data.get('title')
+    file = request.FILES.get('file')
+    works = request.data.get('openalex_id')
+    title_analysis = request.data.get('title')
+    file_url = file
+    title = request.data.get('title', None)
+    display_name = request.data.get('title', '')
+    author_display_name = request.data.get('author_display_name', '')
+    cited_by_count = request.data.get('cited_by_count', None)
+    created_time = request.data.get('created_time', None)
+    uid = request.user.id
+    now_user = User.objects.get(id=uid)
 
     try:
+        work = Work.objects.filter(open_alex_id=works)
+
+        if not work.exists():
+            work = Work.objects.create(
+                open_alex_id=works,
+                title=title,
+                display_name=display_name,
+                author_display_name=author_display_name,
+                cited_by_count=cited_by_count,
+                created_time=created_time
+            )[0]
+        else:
+            work = work.first()
         analysis = Analysis.objects.create(
-            works=works,
+            works=work,
             file_url=file_url,
-            title=title,
+            file=file,
+            title=title_analysis,
             user=request.user.id
         )
-        if works.author.is_professional == 1:
-            user = User.objects.get(id=1)  # 此处为管理员的id，将审核信息发送给管理员
+        administrators = User.objects.filter(is_staff=True)
+        for user in administrators:
             try:
                 Message.objects.create(
+                    sender=now_user,
                     receiver=user,
                     type=6,
                     content="有解析需要被审核",
@@ -63,17 +85,17 @@ def create_analysis(request, essay_id):
                 )
             except Exception as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({"message": "Analysis created successfully, sending to be examined", "id": analysis.id},
-                        status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({"message": "Analysis created successfully, sending to be examined", "id": analysis.id},
+                    status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def examine_analysis(request, message_id):
+def examine_analysis(request):
     # 管理员进行解析的审核，flag为0为不通过，1为通过
-    message_id = int(message_id)
+    message_id = request.data.get('message_id')
     message = Message.objects.get(id=message_id)
     analysis = message.analysis
     flag = request.data.get('flag')
@@ -97,9 +119,9 @@ def examine_analysis(request, message_id):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_analysis(request, work_id):
+def get_analysis(request):
     # 获得一个论文页面的所有解析
-    work_id = int(work_id)
+    work_id = request.data.get('woek_id')
 
     title = request.query_params.get('title')
     created_time = request.query_params.get('created_time')
@@ -125,9 +147,9 @@ def get_analysis(request, work_id):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_analysis_one(request, analysis_id):
+def get_analysis_one(request):
     # 获取某个解析
-    analysis_id = int(analysis_id)
+    analysis_id = request.data.get('analysis_id')
     try:
         analysis = Analysis.objects.get(id=analysis_id)
     except Exception as e:

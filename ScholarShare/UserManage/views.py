@@ -83,7 +83,7 @@ class UserLogoutView(APIView):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def getinfo(request):
-    uid = request.data.get('uid')
+    uid = request.user.id
     try:
         user = User.objects.get(id=uid)
     except Exception as e:
@@ -94,7 +94,7 @@ def getinfo(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def editinfo(request):
-    uid = request.data.get('uid')
+    uid = request.user.id
     phone_number = request.data.get('phone_number')
     gender = request.data.get('gender')
     description = request.data.get('description')
@@ -113,7 +113,7 @@ def editinfo(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def uploadimage(request):
-    uid = request.data.get('uid')
+    uid = request.user.id
     # avatar_url = request.data.get('avatar_url')
     try:
         file = request.FILES.get('image')
@@ -129,7 +129,7 @@ def uploadimage(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def downloadimage(request):
-    uid = request.data.get('uid')
+    uid = request.user.id
     try:
         user = User.objects.get(id=uid)
     except Exception as e:
@@ -140,7 +140,7 @@ def downloadimage(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def uploadconfirm(request):
-    uid = request.data.get('uid')
+    uid = request.user.id
     try:
         file = request.FILES.get('pdf')
         openalex_id = request.data.get('openalex_id', None)
@@ -158,7 +158,6 @@ def uploadconfirm(request):
             created_time=created_time
         )
         administrators = User.objects.filter(is_staff=True)
-        user.is_professional = 0
         for administrator in administrators:
             Message.objects.create(
                 sender=user,
