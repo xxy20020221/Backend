@@ -117,7 +117,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'ScholarShareCore',
         'USER': 'root',
-        'PASSWORD': 'Zz11235813',
+        'PASSWORD': 'loushang501',
         'HOST': '127.0.0.1',
         'PORT': '3306',
     }
@@ -151,6 +151,16 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 
 USE_TZ = True
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379/1',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
 
 
 # Static files (CSS, JavaScript, Images)
