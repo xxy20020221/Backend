@@ -22,5 +22,6 @@ urlpatterns = [
     path('editinfo/', views.editinfo, name='getInformation'),
     path('uploadconfirm/', views.uploadconfirm, name='uploadConfirm'),
     path('uploadimage/', views.uploadimage, name='uploadImage'),
+    path('downloadimage/', views.downloadimage, name='uploadImage'),
     path('examine/', views.examine, name='examine'),
 ]+router.urls
