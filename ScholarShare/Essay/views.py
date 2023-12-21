@@ -16,8 +16,8 @@ import copy
 def cache_get_value(type,params,per_page,pages):
     
     key = json.dumps(params)
-    value = None
-    # value = cache.get(key)
+    # value = None
+    value = cache.get(key)
     base_url = "https://api.openalex.org"
     api_caller = APICaller(base_url)
     
@@ -37,13 +37,14 @@ def cache_get_value(type,params,per_page,pages):
             #         value['concepts_count'][concepts_type['group_by'][i]['key_display_name']] = concepts_type['group_by'][i]['count']
             
             # 处理abstract
-            for i in range(len(value['results'])):
-                abstract_inverted_index = value['results'][i].get('abstract_inverted_index',None)
-                if(abstract_inverted_index is not None):
-                    
-                    tmp = convert_abstract(abstract_inverted_index)
-                    value['results'][i]['abstract'] = tmp
-                    value['results'][i]['abstract_inverted_index'] = None
+            if type == "works":
+                for i in range(len(value['results'])):
+                    abstract_inverted_index = value['results'][i].get('abstract_inverted_index',None)
+                    if(abstract_inverted_index is not None):
+                        
+                        tmp = convert_abstract(abstract_inverted_index)
+                        value['results'][i]['abstract'] = tmp
+                        value['results'][i]['abstract_inverted_index'] = None
         except:
             
             SystemError("OpenAlex error")
@@ -53,8 +54,8 @@ def cache_get_value(type,params,per_page,pages):
 
 def cache_get_value_not_paged(type,params):
     key = json.dumps(params)
-    value = None
-    # value = cache.get(key)
+    # value = None
+    value = cache.get(key)
     base_url = "https://api.openalex.org"
     api_caller = APICaller(base_url)
     if value is None:
@@ -76,6 +77,35 @@ def cache_get_value_not_paged(type,params):
         if(value is not None):   
             cache.set(key,value)
     return value
+
+
+def get_single_object(type:String,id):
+    base_url = "https://api.openalex.org"
+    api_caller = APICaller(base_url)
+    params = {}
+    # value = None
+    value = cache.get(id)
+    if value is None:
+        try:
+            value = api_caller.get(type+'/'+id,params)
+            
+            if type == "works":
+                abstract_inverted_index = value.get('abstract_inverted_index',None)
+                
+                if(abstract_inverted_index is not None):
+                    
+                    tmp = convert_abstract(abstract_inverted_index)
+                    value['abstract'] = tmp
+                    value['abstract_inverted_index'] = None
+        except:
+            SystemError("OpenAlex error")
+
+        
+
+        if(value is not None):   
+            cache.set(id,value)
+    return value
+    
 
 # 获取所有openalex的文献数量
 def get_open_alex_data_num():
@@ -138,11 +168,16 @@ def get_works(request):
     params = convert_query_params(params)
     final_filter = params.get('filter')
     advanced = request.data.get('isAdvanced', None)
+    single_object_id = request.data.get('single_object_id',None)
     isAutoComplete = params.get('isAutoComplete', None)
     base_url = "works"
     
     if(isAutoComplete):
         base_url = "autocomplete/" + base_url
+
+    if(single_object_id):
+        value = get_single_object(base_url,single_object_id)
+        return Response(value, status=status.HTTP_201_CREATED)
 
     if advanced:
         # 遍历 final_filter 中的每个项目
@@ -189,7 +224,12 @@ def get_authors(request):
     params = convert_query_params(params)
     final_filter = params.get('filter')
     advanced = request.data.get('isAdvanced', None)
+    single_object_id = request.data.get('single_object_id',None)
     base_url = "authors"
+
+    if(single_object_id):
+        value = get_single_object(base_url,single_object_id)
+        return Response(value, status=status.HTTP_201_CREATED)
 
     if advanced:
         # 遍历 final_filter 中的每个项目
@@ -227,7 +267,12 @@ def get_institutions(request):
     params = convert_query_params(params)
     final_filter = params.get('filter')
     advanced = request.data.get('isAdvanced', None)
+    single_object_id = request.data.get('single_object_id',None)
     base_url = "institutions"
+
+    if(single_object_id):
+        value = get_single_object(base_url,single_object_id)
+        return Response(value, status=status.HTTP_201_CREATED)
 
     if advanced:
         # 遍历 final_filter 中的每个项目
@@ -257,7 +302,12 @@ def get_concepts(request):
     params = convert_query_params(params)
     final_filter = params.get('filter')
     advanced = request.data.get('isAdvanced', None)
+    single_object_id = request.data.get('single_object_id',None)
     base_url = "concepts"
+
+    if(single_object_id):
+        value = get_single_object(base_url,single_object_id)
+        return Response(value, status=status.HTTP_201_CREATED)
 
     if advanced:
         # 遍历 final_filter 中的每个项目

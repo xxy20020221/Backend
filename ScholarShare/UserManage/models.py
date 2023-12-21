@@ -21,6 +21,7 @@ class User(AbstractUser):
     avatar_url = models.CharField('用户头像路径', max_length=128, default='')
     register_date = models.DateTimeField(auto_now_add=True)
 
+    is_professional = models.IntegerField('是否认证', default=-1)  # -1未认证，0正在申请，1已认证
     is_professor = models.BooleanField(default=False)
     author = models.ForeignKey(Author,on_delete=models.CASCADE,related_name='author',null=True,blank=True) # 作者,开始可以为空
     work_count = models.IntegerField(default=0)
