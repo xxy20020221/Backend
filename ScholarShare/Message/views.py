@@ -25,6 +25,7 @@ from rest_framework.exceptions import NotAuthenticated,AuthenticationFailed,Perm
 from rest_framework.permissions import AllowAny,IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 # Create your views here.
+from utils.tools import list_model_to_dict
 from .models import Message
 from .serializers import MessageSerializer
 
@@ -41,7 +42,7 @@ def getMessages(request):
     created_before = request.query_params.get('created_before')
     created_after = request.query_params.get('created_after')
 
-    query = Q(reveiver_id=user_id)
+    query = Q(receiver_id=user_id)
     if type:
         query &= Q(type=type)
     if sender_id:
@@ -57,7 +58,7 @@ def getMessages(request):
         messages = Message.objects.filter(query)
     except Exception as e:
         return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
-    return Response(MessageSerializer(messages,many=True).data,status=status.HTTP_200_OK)
+    return Response(list_model_to_dict(messages, fields=['pdf']),status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])

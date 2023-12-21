@@ -28,5 +28,6 @@ class Message(models.Model):
     
     pdf = models.FileField(max_length=100,upload_to='confirm/',default="")  #pdf
     url = models.CharField(max_length=100,default="")  #访问路由
+    is_read = models.BooleanField(default=False)
 
 

@@ -208,6 +208,8 @@ def examine(request):
                 type=1,
                 content="申请不通过",
             )
+        message.is_read = True
+        message.save()
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     return Response({"message": "success"}, status=status.HTTP_201_CREATED)

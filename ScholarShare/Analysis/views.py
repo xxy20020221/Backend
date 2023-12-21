@@ -42,7 +42,7 @@ def create_analysis(request):
     # file = request.data.get('file')
     file = request.FILES.get('file')
     works = request.data.get('openalex_id')
-    title_analysis = request.data.get('title')
+    title_analysis = request.data.get('title_analysis')
     file_url = file
     title = request.data.get('title', None)
     display_name = request.data.get('title', '')
@@ -56,14 +56,14 @@ def create_analysis(request):
         work = Work.objects.filter(open_alex_id=works)
 
         if not work.exists():
-            work = Work.objects.create(
+            work[0] = Work.objects.create(
                 open_alex_id=works,
                 title=title,
                 display_name=display_name,
                 author_display_name=author_display_name,
                 cited_by_count=cited_by_count,
                 created_time=created_time
-            )[0]
+            )
         else:
             work = work.first()
         analysis = Analysis.objects.create(
@@ -71,7 +71,7 @@ def create_analysis(request):
             file_url=file_url,
             file=file,
             title=title_analysis,
-            user=request.user.id
+            user=User.objects.get(id=request.user.id)
         )
         administrators = User.objects.filter(is_staff=True)
         for user in administrators:
@@ -99,6 +99,7 @@ def examine_analysis(request):
     message = Message.objects.get(id=message_id)
     analysis = message.analysis
     flag = request.data.get('flag')
+    flag = int(flag)
     if flag == 1:
         analysis.is_examined = True
         analysis.save()
@@ -107,12 +108,13 @@ def examine_analysis(request):
         message1 = Message.objects.create(
             receiver=analysis.user,
             type=flag + 7,
-            content=str,
             analysis=analysis,
         )
+
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
+    message.is_read = True
+    message.save()
     return Response({"message": "Examination complete", "id": message1.id},
                     status=status.HTTP_201_CREATED)
 
@@ -121,7 +123,7 @@ def examine_analysis(request):
 @permission_classes([IsAuthenticated])
 def get_analysis(request):
     # 获得一个论文页面的所有解析
-    work_id = request.data.get('woek_id')
+    work_id = request.data.get('work_id')
 
     title = request.query_params.get('title')
     created_time = request.query_params.get('created_time')
@@ -142,7 +144,7 @@ def get_analysis(request):
         analysis = Analysis.objects.filter(query)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    return Response(list_model_to_dict(analysis, fields=['file_url', 'file']), status=status.HTTP_200_OK)
+    return Response(list_model_to_dict(analysis, fields=['file']), status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
