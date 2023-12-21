@@ -22,6 +22,8 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('api/', include('UserManage.urls', namespace='UserManage')),
+    path('api/', include('Essay.urls', namespace='Essay')),
+    path('api/', include('Collection.urls', namespace='Collection')),
 ]
 
 if settings.DEBUG:

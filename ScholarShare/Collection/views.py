@@ -40,6 +40,7 @@ def createCollectionPackage(request):
         return JsonResponse({'error': 'A CollectionPackage with this name already exists'}, status=400)
     try:
         addCollectionPackage = ColletionPackage.objects.create(user_id=user_id,name=name)
+        return Response({"message": "CollectionPackage created successfully"}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
     
@@ -67,6 +68,7 @@ def renameCollectionPackage(request):
 def deleteCollectionPackage(request):
     # 删除文件夹，需要字段{collection_package_id}
     collection_package_id = request.data.get('collection_package_id')
+    
 
     if not collection_package_id:
         return Response({"error": "collection_package_id is required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -109,8 +111,34 @@ def getCollectionPackage(request):
 @permission_classes([IsAuthenticated])
 def createCollectionWork(request):
     # 文件夹下创建work,默认work和收藏夹必存在,创建字段{work_id,collection_package_id}
-    work_id = request.data.get('work_id')
+    openalex_id = request.data.get('openalex_id')
     collection_package_id = request.data.get('collection_package_id')
+
+    # work的属性，这里需要前端传给后端信息，减少检索时间
+    title = request.data.get('title',None)
+    display_name = request.data.get('title','')
+    author_display_name = request.data.get('author_display_name','')
+    cited_by_count = request.data.get('cited_by_count',None)
+    created_time = request.data.get('created_time',None)
+
+    new_work = Work.objects.filter(open_alex_id=openalex_id)
+
+    if not new_work.exists():
+
+        new_work = Work.objects.create(
+            open_alex_id=openalex_id,
+            title=title,
+            display_name=display_name,
+            author_display_name=author_display_name,
+            cited_by_count=cited_by_count,
+            created_time=created_time
+        )[0]
+    else:
+        new_work = new_work.first()
+
+    # 获取新创建的对象的ID
+    work_id = new_work.id
+
 
     collection_package = ColletionPackage.objects.get(id=collection_package_id)
     
@@ -124,6 +152,7 @@ def createCollectionWork(request):
             collection_package_id=collection_package_id
         )
         collection_package.sum+=1
+        collection_package.save()
         return Response({"message": "CollectionWork created successfully", "id": collection_work.id}, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -146,6 +175,7 @@ def createCollectionAnalysis(request):
             collection_package_id=collection_package_id
         )
         collection_package.sum+=1
+        collection_package.save()
         return Response({"message": "CollectionAnalysis created successfully", "id": collection_analysis.id}, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -161,13 +191,14 @@ def getCollectionPackageContents(request, collection_package_id):
         
         collection_package = ColletionPackage.objects.get(id=collection_package_id)
    
-        works = [cw.work for cw in CollectionWork.objects.filter(collection_package=collection_package)]
-        analysis = [ca.analysis for ca in CollectionAnalysis.objects.filter(collection_package=collection_package)]
+        works = CollectionWork.objects.filter(collection_package=collection_package)
+        analysis = CollectionAnalysis.objects.filter(collection_package=collection_package)
 
         
         work_serializer = CollectionWorkSerializer(works, many=True)
+        
         analysis_serializer = CollectionAnalysisSerializer(analysis, many=True)
-       
+        
         response_data = {
             'works': work_serializer.data,
             'analysis': analysis_serializer.data
