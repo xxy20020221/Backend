@@ -82,6 +82,7 @@ def create_analysis(request):
                     type=6,
                     content="有解析需要被审核",
                     analysis=analysis,
+                    work=work,
                 )
             except Exception as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

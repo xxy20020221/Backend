@@ -61,10 +61,14 @@ def getMessages(request):
         for i in range(messages.count()):
             n = needs[i]
             n['sender_name'] = messages[i].sender.username
+            if messages[i].work is not None:
+                n['work_title'] = messages[i].work.title
+            if messages[i].analysis is not None:
+                n['analysis_url'] = messages[i].analysis.file_url
             results.append(n)
     except Exception as e:
-        return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
-    return Response(results,status=status.HTTP_200_OK)
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(results, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
