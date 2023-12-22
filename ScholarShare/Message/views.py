@@ -56,9 +56,15 @@ def getMessages(request):
 
     try:
         messages = Message.objects.filter(query)
+        needs = list_model_to_dict(messages, fields=['pdf'])
+        results = []
+        for i in range(messages.count()):
+            n = needs[i]
+            n['sender_name'] = messages[i].sender.username
+            results.append(n)
     except Exception as e:
         return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
-    return Response(list_model_to_dict(messages, fields=['pdf']),status=status.HTTP_200_OK)
+    return Response(results,status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
