@@ -73,4 +73,5 @@ def removeMessage(request):
     else:
         Message.objects.filter(id=message_id).delete()
 
+    return Response({"message": "success"}, status=status.HTTP_200_OK)
     
