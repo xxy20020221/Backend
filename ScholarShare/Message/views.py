@@ -87,4 +87,12 @@ def removeMessage(request):
         Message.objects.filter(id=message_id).delete()
 
     return Response({"message": "success"}, status=status.HTTP_200_OK)
-    
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def readMessage(request):
+    message_id = request.data.get('message_id')
+    message = Message.objects.get(id=int(message_id))
+    message.is_read = True
+    message.save()
+    return Response({"message": "已读"}, status=status.HTTP_200_OK)
