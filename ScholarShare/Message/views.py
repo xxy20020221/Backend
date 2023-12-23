@@ -41,6 +41,7 @@ def getMessages(request):
     created_time = request.query_params.get('created_time')
     created_before = request.query_params.get('created_before')
     created_after = request.query_params.get('created_after')
+    is_read = request.query_params.get('is_read')
 
     query = Q(receiver_id=user_id)
     if type:
@@ -53,6 +54,8 @@ def getMessages(request):
         query &= Q(created_time__lt=created_before)
     if created_after:
         query &= Q(created_time__gt=created_after)
+    if is_read:
+        query &= Q(is_read=bool(int(is_read)))
 
     try:
         messages = Message.objects.filter(query)

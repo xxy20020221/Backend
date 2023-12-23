@@ -42,6 +42,7 @@ class UserRegisterView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        print(request.data)
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
@@ -119,7 +120,7 @@ def uploadimage(request):
         file = request.FILES.get('image')
         user = User.objects.get(id=uid)
         user.avatar = file
-        user.avatar_url = file
+        user.avatar_url = '/mnt/final/Backend/ScholarShare/avatar' + str(file)
         user.save()
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -165,7 +166,7 @@ def uploadconfirm(request):
                 pdf=file,
                 type=10,
                 author=author,
-                url=file
+                url='/mnt/final/Backend/ScholarShare/confirm' + str(file)
             )
             user.is_professional = 0
             user.save()

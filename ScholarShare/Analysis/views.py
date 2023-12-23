@@ -43,7 +43,8 @@ def create_analysis(request):
     file = request.FILES.get('file')
     works = request.data.get('openalex_id')
     title_analysis = request.data.get('title_analysis')
-    file_url = file
+    file_url = '/mnt/final/Backend/ScholarShare/analysis/'
+    file_url += str(file)
     title = request.data.get('title', None)
     display_name = request.data.get('title', '')
     author_display_name = request.data.get('author_display_name', '')
