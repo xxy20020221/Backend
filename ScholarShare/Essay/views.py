@@ -6,26 +6,30 @@ from diophila.endpoints import Works
 from diophila.api_caller import APICaller
 from django.core.cache import cache
 # Create your views here.
-from rest_framework.decorators import action,api_view,permission_classes
-from rest_framework.permissions import AllowAny,IsAuthenticated
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
 import json
 from rest_framework.response import Response
-from rest_framework import generics,viewsets,permissions,status
+from rest_framework import generics, viewsets, permissions, status
 import copy
-#TODO 目前cache是保存所有信息，不知道会不会有缓存炸的情况，接下来要处理缓存里处理的信息缓解压力
-def cache_get_value(type,params,per_page,pages):
-    
+
+# TODO 目前cache是保存所有信息，不知道会不会有缓存炸的情况，接下来要处理缓存里处理的信息缓解压力
+from UserManage.models import History, User
+from utils.tools import list_model_to_dict
+
+
+def cache_get_value(type, params, per_page, pages):
     key = json.dumps(params)
     # value = None
     value = cache.get(key)
     base_url = "https://api.openalex.org"
     api_caller = APICaller(base_url)
-    
+
     if value is None:
         print("cache not found, find via api")
         try:
             # 获取文章
-            value = list(api_caller.get_all(type,params,per_page=int(per_page),pages=[int(pages)]))
+            value = list(api_caller.get_all(type, params, per_page=int(per_page), pages=[int(pages)]))
 
             # 获取每个类型的数量  这个要增加很长的搜索时间，考虑展示的时候要不要优化掉
             # if type=="works":
@@ -35,24 +39,24 @@ def cache_get_value(type,params,per_page,pages):
             #     value['concepts_count'] = {}
             #     for i in range(len(concepts_type['group_by'])):
             #         value['concepts_count'][concepts_type['group_by'][i]['key_display_name']] = concepts_type['group_by'][i]['count']
-            
+
             # 处理abstract
             if type == "works":
                 for i in range(len(value['results'])):
-                    abstract_inverted_index = value['results'][i].get('abstract_inverted_index',None)
-                    if(abstract_inverted_index is not None):
-                        
+                    abstract_inverted_index = value['results'][i].get('abstract_inverted_index', None)
+                    if (abstract_inverted_index is not None):
                         tmp = convert_abstract(abstract_inverted_index)
                         value['results'][i]['abstract'] = tmp
                         value['results'][i]['abstract_inverted_index'] = None
         except:
-            
+
             SystemError("OpenAlex error")
-        if(value is not None):   
-            cache.set(key,value)
+        if (value is not None):
+            cache.set(key, value)
     return value
 
-def cache_get_value_not_paged(type,params):
+
+def cache_get_value_not_paged(type, params):
     key = json.dumps(params)
     # value = None
     value = cache.get(key)
@@ -61,25 +65,24 @@ def cache_get_value_not_paged(type,params):
     if value is None:
         print("cache not found, find via api")
         try:
-            value = api_caller.get(type,params)
+            value = api_caller.get(type, params)
 
             # 处理abstract
             for i in range(len(value['results'])):
-                abstract_inverted_index = value['results'][i].get('abstract_inverted_index',None)
-                if(abstract_inverted_index is not None):
-                    
+                abstract_inverted_index = value['results'][i].get('abstract_inverted_index', None)
+                if (abstract_inverted_index is not None):
                     tmp = convert_abstract(abstract_inverted_index)
                     value['results'][i]['abstract'] = tmp
                     value['results'][i]['abstract_inverted_index'] = None
         except:
-            
+
             SystemError("OpenAlex error")
-        if(value is not None):   
-            cache.set(key,value)
+        if (value is not None):
+            cache.set(key, value)
     return value
 
 
-def get_single_object(type:String,id):
+def get_single_object(type: String, id):
     base_url = "https://api.openalex.org"
     api_caller = APICaller(base_url)
     params = {}
@@ -87,25 +90,22 @@ def get_single_object(type:String,id):
     value = cache.get(id)
     if value is None:
         try:
-            value = api_caller.get(type+'/'+id,params)
-            
+            value = api_caller.get(type + '/' + id, params)
+
             if type == "works":
-                abstract_inverted_index = value.get('abstract_inverted_index',None)
-                
-                if(abstract_inverted_index is not None):
-                    
+                abstract_inverted_index = value.get('abstract_inverted_index', None)
+
+                if (abstract_inverted_index is not None):
                     tmp = convert_abstract(abstract_inverted_index)
                     value['abstract'] = tmp
                     value['abstract_inverted_index'] = None
         except:
             SystemError("OpenAlex error")
 
-        
-
-        if(value is not None):   
-            cache.set(id,value)
+        if (value is not None):
+            cache.set(id, value)
     return value
-    
+
 
 # 获取所有openalex的文献数量
 def get_open_alex_data_num():
@@ -141,6 +141,7 @@ def convert_query_params(query_params):
 
     return params
 
+
 def convert_abstract(inverted_index):
     position_word_map = {}
 
@@ -155,28 +156,36 @@ def convert_abstract(inverted_index):
     # 使用排序后的单词位置重构文本
     reconstructed_text = ' '.join(position_word_map[pos] for pos in sorted_positions)
 
-
     return reconstructed_text
+
+
+def add_history(search, user_id, type, is_advanced):
+    History.objects.create(
+        user=User.objects.get(id=int(user_id)),
+        search=search,
+        type=type,
+        is_advanced=is_advanced
+    )
 
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def get_works(request):
-    
     user_id = request.user.id
     params: dict = request.query_params
     params = convert_query_params(params)
     final_filter = params.get('filter')
     advanced = request.data.get('isAdvanced', None)
-    single_object_id = request.data.get('single_object_id',None)
+    single_object_id = request.data.get('single_object_id', None)
     isAutoComplete = params.get('isAutoComplete', None)
     base_url = "works"
-    
-    if(isAutoComplete):
+    add_history(params.get('search', None), user_id, 1, advanced)
+
+    if (isAutoComplete):
         base_url = "autocomplete/" + base_url
 
-    if(single_object_id):
-        value = get_single_object(base_url,single_object_id)
+    if (single_object_id):
+        value = get_single_object(base_url, single_object_id)
         return Response(value, status=status.HTTP_201_CREATED)
 
     if advanced:
@@ -214,21 +223,20 @@ def get_works(request):
     return Response(value, status=status.HTTP_201_CREATED)
 
 
-
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def get_authors(request):
-    
     user_id = request.user.id
     params: dict = request.query_params
     params = convert_query_params(params)
     final_filter = params.get('filter')
     advanced = request.data.get('isAdvanced', None)
-    single_object_id = request.data.get('single_object_id',None)
+    single_object_id = request.data.get('single_object_id', None)
     base_url = "authors"
+    add_history(params.get('search', None), user_id, 2, advanced)
 
-    if(single_object_id):
-        value = get_single_object(base_url,single_object_id)
+    if (single_object_id):
+        value = get_single_object(base_url, single_object_id)
         return Response(value, status=status.HTTP_201_CREATED)
 
     if advanced:
@@ -267,11 +275,12 @@ def get_institutions(request):
     params = convert_query_params(params)
     final_filter = params.get('filter')
     advanced = request.data.get('isAdvanced', None)
-    single_object_id = request.data.get('single_object_id',None)
+    single_object_id = request.data.get('single_object_id', None)
     base_url = "institutions"
+    add_history(params.get('search', None), user_id, 3, advanced)
 
-    if(single_object_id):
-        value = get_single_object(base_url,single_object_id)
+    if (single_object_id):
+        value = get_single_object(base_url, single_object_id)
         return Response(value, status=status.HTTP_201_CREATED)
 
     if advanced:
@@ -293,20 +302,21 @@ def get_institutions(request):
     value = cache_get_value(base_url, params, per_page, pages)
     return Response(value, status=status.HTTP_201_CREATED)
 
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def get_concepts(request):
-    
     user_id = request.user.id
     params: dict = request.query_params
     params = convert_query_params(params)
     final_filter = params.get('filter')
     advanced = request.data.get('isAdvanced', None)
-    single_object_id = request.data.get('single_object_id',None)
+    single_object_id = request.data.get('single_object_id', None)
+    add_history(params.get('search', None), user_id, 4, advanced)
     base_url = "concepts"
 
-    if(single_object_id):
-        value = get_single_object(base_url,single_object_id)
+    if (single_object_id):
+        value = get_single_object(base_url, single_object_id)
         return Response(value, status=status.HTTP_201_CREATED)
 
     if advanced:
@@ -337,20 +347,25 @@ def analyze_edges(request):
     edges = {}
     params = {}
     base_url = "https://api.openalex.org"
-    works = request.data.get('works',None)
+    works = request.data.get('works', None)
     api_caller = APICaller(base_url)
     related_to = 'related_to:'
     referenced = 'referenced_by:'
     for work in works:
         work_id = work.get('id')
-        related_prompt = related_to+work_id
-        referenced_prompt = referenced+work_id
-        params['filter'] = related_prompt+','+referenced_prompt
-        
-        value = api_caller.get("works",params)
+        related_prompt = related_to + work_id
+        referenced_prompt = referenced + work_id
+        params['filter'] = related_prompt + ',' + referenced_prompt
+
+        value = api_caller.get("works", params)
 
     return Response(value, status=status.HTTP_201_CREATED)
-    
 
 
-
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def show_history(request):
+    user_id = request.user.id
+    type1 = request.query_params.get('type')
+    histories = History.objects.filter(user=user_id, type=type1)
+    return Response(list_model_to_dict(histories), status=status.HTTP_201_CREATED)

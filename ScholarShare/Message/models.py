@@ -26,7 +26,7 @@ class Message(models.Model):
     content = models.TextField(max_length=1024,default="")  #消息内容
     reply = models.TextField(max_length=1024,default="")  #回复内容(如果是回复消息的话)
     
-    pdf = models.FileField(max_length=100,upload_to='data/confirm/',default="")  #pdf
+    pdf = models.FileField(max_length=100,upload_to='confirm/',default="")  #pdf
     url = models.CharField(max_length=100,default="")  #访问路由
     is_read = models.BooleanField(default=False)
 
