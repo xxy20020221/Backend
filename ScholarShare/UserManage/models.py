@@ -17,7 +17,7 @@ class User(AbstractUser):
     phone_number = models.CharField(max_length=11, null=True, blank=True)
     gender = models.CharField(max_length=10,choices=gender_choices,null=True,blank=True)
     description = models.CharField(max_length=1000, null=True, blank=True)
-    avatar = models.ImageField(upload_to='avatar/',default='avatar/default.jpg', blank=True)
+    avatar = models.ImageField(upload_to='data/avatar/',default='avatar/default.jpg', blank=True)
     avatar_url = models.CharField('用户头像路径', max_length=128, default='')
     register_date = models.DateTimeField(auto_now_add=True)
 

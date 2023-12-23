@@ -120,7 +120,7 @@ def uploadimage(request):
         file = request.FILES.get('image')
         user = User.objects.get(id=uid)
         user.avatar = file
-        user.avatar_url = '/mnt/final/Backend/ScholarShare/avatar' + str(file)
+        user.avatar_url = 'http://121.36.19.201/media/avatar/' + str(file)
         user.save()
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -166,7 +166,7 @@ def uploadconfirm(request):
                 pdf=file,
                 type=10,
                 author=author,
-                url='/mnt/final/Backend/ScholarShare/confirm' + str(file)
+                url='http://121.36.19.201/media/confirm/' + str(file)
             )
             user.is_professional = 0
             user.save()
