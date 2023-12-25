@@ -42,6 +42,7 @@ class UserRegisterView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        print(request.data)
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
@@ -114,12 +115,17 @@ def editinfo(request):
 @permission_classes([IsAuthenticated])
 def uploadimage(request):
     uid = request.user.id
+    print(request)
+    print(request.data)
+    print(request.FILES)
     # avatar_url = request.data.get('avatar_url')
+    file = request.FILES.get('image')
     try:
-        file = request.FILES.get('image')
+        print(file)
         user = User.objects.get(id=uid)
         user.avatar = file
-        user.avatar_url = file
+        user.save()
+        user.avatar_url = 'http://121.36.19.201/media/' + str(user.avatar)
         user.save()
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -159,14 +165,16 @@ def uploadconfirm(request):
         )
         administrators = User.objects.filter(is_staff=True)
         for administrator in administrators:
-            Message.objects.create(
+            message = Message.objects.create(
                 sender=user,
                 receiver=administrator,
                 pdf=file,
                 type=10,
                 author=author,
-                url=file
+                url='http://121.36.19.201/media/'
             )
+            message.url = message.url + str(message.pdf)
+            message.save()
             user.is_professional = 0
             user.save()
     except Exception as e:
@@ -197,16 +205,18 @@ def examine(request):
             message.sender.save()
             Message.objects.create(
                 receiver=message.sender,
+                sender=User.objects.get(id=request.user.id),
                 type=0,
-                content="申请通过",
+                content="您的认证申请已通过",
             )
         else:
             message.sender.is_professional = -1
             message.sender.save()
             Message.objects.create(
                 receiver=message.sender,
+                sender=User.objects.get(id=request.user.id),
                 type=1,
-                content="申请不通过",
+                content="您的认证申请不通过",
             )
         message.is_read = True
         message.save()

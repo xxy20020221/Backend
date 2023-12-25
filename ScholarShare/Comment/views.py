@@ -29,7 +29,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from utils.tools import list_model_to_dict
 from Comment.models import *
 from Message.models import *
-
+from .serializers import CommentSerializer,CommentToAnalysisSerializer,CommentToCommentSerializer,CommentToWorkSerializer
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -74,7 +74,7 @@ def comment_on_work(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def get_comment_on_work(request, openalex_id):
     # 获取论文下的评论
     work_id = openalex_id
@@ -82,7 +82,7 @@ def get_comment_on_work(request, openalex_id):
         comments = CommentToWork.objects.filter(work_openalex_id=work_id)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    return Response(list_model_to_dict(comments), status=status.HTTP_200_OK)
+    return Response(CommentToWorkSerializer(comments,many=True).data, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -118,7 +118,7 @@ def comment_on_analysis(request, analysis_id):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def get_comment_on_analysis(request, analysis_id):
     # 获取解析下的评论
     work_id = int(analysis_id)
@@ -126,7 +126,7 @@ def get_comment_on_analysis(request, analysis_id):
         comments = CommentToAnalysis.objects.filter(analysis=work_id)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    return Response(list_model_to_dict(comments), status=status.HTTP_200_OK)
+    return Response(CommentToAnalysisSerializer(comments,many=True).data, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -163,7 +163,7 @@ def comment_on_comment(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def get_comment_on_comment(request, comment_id):
     # 获取评论下的评论
     comment_id = int(comment_id)
@@ -171,7 +171,7 @@ def get_comment_on_comment(request, comment_id):
         comments = CommentToComment.objects.filter(father=comment_id)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    return Response(list_model_to_dict(comments), status=status.HTTP_200_OK)
+    return Response(CommentToCommentSerializer(comments,many=True).data, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])

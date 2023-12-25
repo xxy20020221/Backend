@@ -34,7 +34,7 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
+    # "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -56,11 +56,12 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    # "django.middleware.csrf.CsrfViewMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "django.middleware.common.CommonMiddleware",
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = True
@@ -117,8 +118,8 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'ScholarShareCore',
         'USER': 'root',
-        'PASSWORD': 'loushang501',
-        'HOST': '127.0.0.1',
+        'PASSWORD': 'Zz11235813',
+        'HOST': '121.36.19.201',
         'PORT': '3306',
     }
 }
@@ -136,11 +137,11 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",},
 ]
 # 改为前端的地址，这里是我本地的地址
-CORS_ORIGIN_WHITELIST = (
-    'http://127.0.0.1:8080',
-    'http://localhost:8080',
-    'https://localhost:8080',
-)
+# CORS_ORIGIN_WHITELIST = (
+#     'http://127.0.0.1:8000',
+#     'http://localhost:8000',
+#     'https://localhost:8000',
+# )
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
@@ -183,3 +184,7 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ]
 }
+
+MEDIA_URL = '/media/'
+
+MEDIA_ROOT = '/mnt/final/Backend/ScholarShare/data'

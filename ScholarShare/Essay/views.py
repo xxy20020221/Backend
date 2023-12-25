@@ -1,4 +1,5 @@
 import requests
+from django.forms import model_to_dict
 from django.http import JsonResponse
 from properties import *
 from diophila import OpenAlex
@@ -12,6 +13,8 @@ import json
 from rest_framework.response import Response
 from rest_framework import generics,viewsets,permissions,status
 import copy
+from UserManage.models import History, User, AuthorName
+from utils.tools import list_model_to_dict
 #TODO 目前cache是保存所有信息，不知道会不会有缓存炸的情况，接下来要处理缓存里处理的信息缓解压力
 def cache_get_value(type,params,per_page,pages):
     
@@ -26,15 +29,16 @@ def cache_get_value(type,params,per_page,pages):
         try:
             # 获取文章
             value = list(api_caller.get_all(type,params,per_page=int(per_page),pages=[int(pages)]))
+            value = value[0]
 
             # 获取每个类型的数量  这个要增加很长的搜索时间，考虑展示的时候要不要优化掉
-            # if type=="works":
-            #     params['group_by']='concepts.id'
-            #     params['sort']='count:desc'
-            #     concepts_type = api_caller.get(type,params)
-            #     value['concepts_count'] = {}
-            #     for i in range(len(concepts_type['group_by'])):
-            #         value['concepts_count'][concepts_type['group_by'][i]['key_display_name']] = concepts_type['group_by'][i]['count']
+            if type=="works":
+                params['group_by']='concepts.id'
+                params['sort']='count:desc'
+                concepts_type = api_caller.get(type,params)
+                value['concepts_count'] = {}
+                for i in range(len(concepts_type['group_by'])):
+                    value['concepts_count'][concepts_type['group_by'][i]['key_display_name']] = concepts_type['group_by'][i]['count']
             
             # 处理abstract
             if type == "works":
@@ -159,6 +163,8 @@ def convert_abstract(inverted_index):
     return reconstructed_text
 
 
+
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def get_works(request):
@@ -170,13 +176,41 @@ def get_works(request):
     advanced = request.data.get('isAdvanced', None)
     single_object_id = request.data.get('single_object_id',None)
     isAutoComplete = params.get('isAutoComplete', None)
+    group_by = params.get('group_by',None)
+    concepts_level = request.data.get('concepts_level',None)
     base_url = "works"
+    # add_history(params.get('search', None), user_id, 1, advanced)
+
+    # if(group_by):
+    #     if(group_by=="author_position"):
+
     
     if(isAutoComplete):
         base_url = "autocomplete/" + base_url
 
     if(single_object_id):
         value = get_single_object(base_url,single_object_id)
+        if user_id is not None:
+            name = value['authorships']
+            names = ''
+            tmp = []
+            for n in name:
+                names = names + n['author']['display_name'] + ','
+                tmp.append(n['author']['display_name'])
+            history = History.objects.create(
+                user=request.user,
+                title=value['title'],
+                publication_date=value['publication_date'],
+                language=value['language'],
+                open_alex_id=single_object_id,
+                cited_by_count=value['cited_by_count'],
+                author_name=names
+            )
+            for t in tmp:
+                AuthorName.objects.create(
+                    history=history,
+                    name=t
+                )
         return Response(value, status=status.HTTP_201_CREATED)
 
     if advanced:
@@ -206,11 +240,41 @@ def get_works(request):
                 ids = '|'.join([str(concept['id']) for concept in value_response['results']])
                 final_filter = final_filter.replace(item, f"concepts.id:{ids}")
 
+            elif key == 'locations.source.display_name':
+                search_filter = f"display_name.search:{value}"
+                search_param = {'filter': search_filter, 'select': "id"}
+                value_response = cache_get_value_not_paged("sources", search_param)
+                ids = '|'.join([str(concept['id']) for concept in value_response['results']])
+                final_filter = final_filter.replace(item, f"locations.source.id:{ids}")
+
         params['filter'] = final_filter
 
     per_page = params.get('per_page', 25)
     pages = params.get('page', 1)
     value = cache_get_value(base_url, params, per_page, pages)
+    if(concepts_level and group_by):
+        
+        tmp_params = {'filter':'level:'}
+        tmp_params['filter']=tmp_params['filter']+concepts_level
+        tmp_params['per_page']=300
+        tmp_params['select']="display_name"
+
+        filter_map = cache_get_value("concepts",params=tmp_params,pages=1,per_page=300)['results']
+        
+        for i in range(len(value['group_by'])):
+            flag = 0
+            name = value['group_by'][i].get('key_display_name')
+            for x in filter_map:
+                name2 = x.get('display_name')
+                if(name==name2):
+                    flag=1
+                    break
+            if not flag:
+                value['group_by'][i]=None
+
+        
+
+    
     return Response(value, status=status.HTTP_201_CREATED)
 
 
@@ -226,6 +290,7 @@ def get_authors(request):
     advanced = request.data.get('isAdvanced', None)
     single_object_id = request.data.get('single_object_id',None)
     base_url = "authors"
+    # add_history(params.get('search', None), user_id, 2, advanced)
 
     if(single_object_id):
         value = get_single_object(base_url,single_object_id)
@@ -268,7 +333,10 @@ def get_institutions(request):
     final_filter = params.get('filter')
     advanced = request.data.get('isAdvanced', None)
     single_object_id = request.data.get('single_object_id',None)
+    group_by = params.get('group_by',None)
+    concepts_level = request.data.get('concepts_level',None)
     base_url = "institutions"
+    # add_history(params.get('search', None), user_id, 3, advanced)
 
     if(single_object_id):
         value = get_single_object(base_url,single_object_id)
@@ -291,6 +359,26 @@ def get_institutions(request):
     per_page = params.get('per_page', 25)
     pages = params.get('page', 1)
     value = cache_get_value(base_url, params, per_page, pages)
+
+    if(concepts_level and group_by):
+        
+        tmp_params = {'filter':'level:'}
+        tmp_params['filter']=tmp_params['filter']+concepts_level
+        tmp_params['per_page']=300
+        tmp_params['select']="display_name"
+
+        filter_map = cache_get_value("concepts",params=tmp_params,pages=1,per_page=300)['results']
+        
+        for i in range(len(value['group_by'])):
+            flag = 0
+            name = value['group_by'][i].get('key_display_name')
+            for x in filter_map:
+                name2 = x.get('display_name')
+                if(name==name2):
+                    flag=1
+                    break
+            if not flag:
+                value['group_by'][i]=None
     return Response(value, status=status.HTTP_201_CREATED)
 
 @api_view(['POST'])
@@ -304,6 +392,7 @@ def get_concepts(request):
     advanced = request.data.get('isAdvanced', None)
     single_object_id = request.data.get('single_object_id',None)
     base_url = "concepts"
+    # add_history(params.get('search', None), user_id, 4, advanced)
 
     if(single_object_id):
         value = get_single_object(base_url,single_object_id)
@@ -352,5 +441,15 @@ def analyze_edges(request):
     return Response(value, status=status.HTTP_201_CREATED)
     
 
-
-
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def show_history(request):
+    user_id = request.user.id
+    histories = History.objects.filter(user=user_id)
+    need = []
+    for history in histories:
+        names = AuthorName.objects.filter(history=history)
+        history = model_to_dict(history)
+        history['name'] = list_model_to_dict(names)
+        need.append(history)
+    return Response(need, status=status.HTTP_200_OK)

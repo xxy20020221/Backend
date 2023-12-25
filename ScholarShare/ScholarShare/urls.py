@@ -27,7 +27,8 @@ urlpatterns = [
     path('api/',include('Comment.urls',namespace='Comment')),
     path('api/',include('Message.urls',namespace='Message')),
     path('api/',include('Analysis.urls',namespace='Analysis')),
-]
+    path('api/',include('Follow.urls',namespace='Follow')),
+]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

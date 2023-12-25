@@ -41,6 +41,7 @@ def getMessages(request):
     created_time = request.query_params.get('created_time')
     created_before = request.query_params.get('created_before')
     created_after = request.query_params.get('created_after')
+    is_read = request.query_params.get('is_read')
 
     query = Q(receiver_id=user_id)
     if type:
@@ -53,12 +54,24 @@ def getMessages(request):
         query &= Q(created_time__lt=created_before)
     if created_after:
         query &= Q(created_time__gt=created_after)
+    if is_read:
+        query &= Q(is_read=bool(int(is_read)))
 
     try:
         messages = Message.objects.filter(query)
+        needs = list_model_to_dict(messages, fields=['pdf'])
+        results = []
+        for i in range(messages.count()):
+            n = needs[i]
+            n['sender_name'] = messages[i].sender.username
+            if messages[i].work is not None:
+                n['work_title'] = messages[i].work.title
+            if messages[i].analysis is not None:
+                n['analysis_url'] = messages[i].analysis.file_url
+            results.append(n)
     except Exception as e:
-        return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
-    return Response(list_model_to_dict(messages, fields=['pdf']),status=status.HTTP_200_OK)
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(results, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -73,4 +86,13 @@ def removeMessage(request):
     else:
         Message.objects.filter(id=message_id).delete()
 
-    
+    return Response({"message": "success"}, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def readMessage(request):
+    message_id = request.data.get('message_id')
+    message = Message.objects.get(id=int(message_id))
+    message.is_read = True
+    message.save()
+    return Response({"message": "已读"}, status=status.HTTP_200_OK)

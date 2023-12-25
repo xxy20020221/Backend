@@ -43,7 +43,8 @@ def create_analysis(request):
     file = request.FILES.get('file')
     works = request.data.get('openalex_id')
     title_analysis = request.data.get('title_analysis')
-    file_url = file
+    file_url = 'http://121.36.19.201/media/'
+    # file_url += str(file)
     title = request.data.get('title', None)
     display_name = request.data.get('title', '')
     author_display_name = request.data.get('author_display_name', '')
@@ -73,6 +74,8 @@ def create_analysis(request):
             title=title_analysis,
             user=User.objects.get(id=request.user.id)
         )
+        analysis.file_url = analysis.file_url + str(analysis.file)
+        analysis.save()
         administrators = User.objects.filter(is_staff=True)
         for user in administrators:
             try:
@@ -82,6 +85,7 @@ def create_analysis(request):
                     type=6,
                     content="有解析需要被审核",
                     analysis=analysis,
+                    work=work,
                 )
             except Exception as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -106,10 +110,16 @@ def examine_analysis(request):
 
     try:
         message1 = Message.objects.create(
+            sender=User.objects.get(id=request.user.id),
             receiver=analysis.user,
             type=flag + 7,
             analysis=analysis,
         )
+        if(flag):
+            message1.content="您的解析审核已通过"
+        else:
+            message1.content="您的解析审核未通过"
+        message1.save()
 
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -119,8 +129,8 @@ def examine_analysis(request):
                     status=status.HTTP_201_CREATED)
 
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@api_view(['POST'])
+@permission_classes([AllowAny])
 def get_analysis(request):
     # 获得一个论文页面的所有解析
     work_id = request.data.get('work_id')
@@ -142,13 +152,19 @@ def get_analysis(request):
 
     try:
         analysis = Analysis.objects.filter(query)
+        result = []
+        for a in analysis:
+            n = model_to_dict(a,exclude='file')
+            n['username'] = a.user.username
+            result.append(n)
+        
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    return Response(list_model_to_dict(analysis, fields=['file']), status=status.HTTP_200_OK)
+    return Response(result, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def get_analysis_one(request):
     # 获取某个解析
     analysis_id = request.data.get('analysis_id')

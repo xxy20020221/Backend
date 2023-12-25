@@ -32,7 +32,7 @@ from .serializers import FollowSerializer
 @permission_classes([IsAuthenticated])
 def create_follow(request):
     # 关注某人
-    user_id = request.user.id
+    user = request.user
     openalex_id = request.data.get('openalex_id',None)
 
     
@@ -48,17 +48,15 @@ def create_follow(request):
             real_name=real_name,
             work_count=work_count,
             institution_display_name=institution_display_name,
-            created_time=created_time
-        )[0]
+        )
     else:
         new_Author = new_Author.first()
 
     author_id = new_Author.id
     try:
-
         follow = Follow.objects.create(
-            user_id=user_id,
-            follow_id=author_id
+            user=user,
+            author=new_Author
         )
     except Exception as e:
         return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
@@ -69,9 +67,22 @@ def create_follow(request):
 @permission_classes([IsAuthenticated])
 def get_follow(request):
     # 获取关注列表
-    user_id = request.user.id
+    user = request.user
     try:
-        follows = Follow.objects.filter(user_id=user_id)
+        follows = Follow.objects.filter(user=user)
     except Exception as e:
         return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
     return Response(FollowSerializer(follows,many=True).data,status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def revoke_follow(request):
+    user = request.user
+    author_id = request.data.get('author_id')
+    try:
+        author = Author.objects.filter(open_alex_id=author_id).first()
+        follows = Follow.objects.filter(user=user,author=author).first()
+    except Exception as e:
+        return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
+    return Response({"message":"Unfollow complete"},status=status.HTTP_201_CREATED)

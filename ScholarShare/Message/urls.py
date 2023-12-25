@@ -11,4 +11,5 @@ router = DefaultRouter()
 urlpatterns = [
     path('message/', views.getMessages, name='getMessages'),
     path('message/remove', views.removeMessage, name='removeMessage'),
+    path('message/read', views.readMessage, name='readMessage')
 ]+router.urls

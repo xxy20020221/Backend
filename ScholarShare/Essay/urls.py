@@ -8,7 +8,8 @@ from .views import (
     get_authors,
     get_concepts,
     get_institutions,
-    analyze_edges
+    analyze_edges,
+    show_history
 )
 
 router = DefaultRouter()
@@ -19,5 +20,6 @@ urlpatterns = [
     path('get_institutions/', get_institutions, name='get_institutions'),
     path('get_concepts/', get_concepts, name='get_concepts'),
     path('analyze_edges/', analyze_edges, name='analyze_edges'),
+    path('history/', show_history, name='show_history')
 
 ]+router.urls
