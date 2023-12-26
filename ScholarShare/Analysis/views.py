@@ -52,12 +52,12 @@ def create_analysis(request):
     created_time = request.data.get('created_time', None)
     uid = request.user.id
     now_user = User.objects.get(id=uid)
-
+    
     try:
         work = Work.objects.filter(open_alex_id=works)
-
+        print(work)
         if not work.exists():
-            work[0] = Work.objects.create(
+            work = Work.objects.create(
                 open_alex_id=works,
                 title=title,
                 display_name=display_name,
@@ -68,6 +68,7 @@ def create_analysis(request):
         else:
             work = work.first()
         analysis = Analysis.objects.create(
+            open_alex_id_work=works,
             works=work,
             file_url=file_url,
             file=file,
@@ -133,7 +134,11 @@ def examine_analysis(request):
 @permission_classes([AllowAny])
 def get_analysis(request):
     # 获得一个论文页面的所有解析
-    work_id = request.data.get('work_id')
+    work = request.data.get('work_id')
+    try:
+        work_id = Work.objects.get(open_alex_id=work)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     title = request.query_params.get('title')
     created_time = request.query_params.get('created_time')

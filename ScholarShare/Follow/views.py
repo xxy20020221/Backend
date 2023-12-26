@@ -83,6 +83,7 @@ def revoke_follow(request):
     try:
         author = Author.objects.filter(open_alex_id=author_id).first()
         follows = Follow.objects.filter(user=user,author=author).first()
+        follows.delete()
     except Exception as e:
         return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
     return Response({"message":"Unfollow complete"},status=status.HTTP_201_CREATED)

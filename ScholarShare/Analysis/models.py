@@ -7,6 +7,7 @@ from UserManage.models import User
 # Create your models here.
 class Analysis(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='analysis')
+    open_alex_id_work = models.CharField(default='', max_length=255)
     works = models.ForeignKey(Work, on_delete=models.CASCADE, related_name='works', blank=True)
     created_time = models.DateTimeField(auto_now_add=True)
     file_url = models.CharField(default='', max_length=128, verbose_name='路径')

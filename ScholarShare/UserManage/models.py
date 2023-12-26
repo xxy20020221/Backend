@@ -21,6 +21,8 @@ class User(AbstractUser):
     description = models.CharField(max_length=1000, null=True, blank=True)
     avatar = models.ImageField(upload_to='avatar/', default='avatar/default.jpg', blank=True)
     avatar_url = models.CharField('用户头像路径', max_length=128, default='')
+    true_man = models.ImageField(upload_to='true/', default='true/default.jpg', blank=True)
+    true_man_url = models.CharField('用户真人头像路径', max_length=128, default='')
     register_date = models.DateTimeField(auto_now_add=True)
 
     is_professional = models.IntegerField('是否认证', default=-1)  # -1未认证，0正在申请，1已认证
@@ -42,6 +44,8 @@ class History(models.Model):
     open_alex_id = models.CharField(default='', max_length=255)
     author_name = models.TextField(default='', max_length=255)
     cited_by_count = models.IntegerField(default=0)
+    related_work_1 = models.CharField(default='', max_length=255)
+    related_work_2 = models.CharField(default='', max_length=255)
 
 class AuthorName(models.Model):
     history = models.ForeignKey("History", on_delete=models.CASCADE, null=True)

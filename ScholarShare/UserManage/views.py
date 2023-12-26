@@ -89,7 +89,7 @@ def getinfo(request):
         user = User.objects.get(id=uid)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    return Response(model_to_dict(user, exclude=['author', 'avatar']), status=status.HTTP_200_OK)
+    return Response(model_to_dict(user, exclude=['author', 'avatar','true_man']), status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -115,13 +115,10 @@ def editinfo(request):
 @permission_classes([IsAuthenticated])
 def uploadimage(request):
     uid = request.user.id
-    print(request)
-    print(request.data)
-    print(request.FILES)
+    # print(request.FILES)
     # avatar_url = request.data.get('avatar_url')
     file = request.FILES.get('image')
     try:
-        print(file)
         user = User.objects.get(id=uid)
         user.avatar = file
         user.save()
@@ -148,6 +145,7 @@ def downloadimage(request):
 def uploadconfirm(request):
     uid = request.user.id
     try:
+        image = request.FILES.get('image')
         file = request.FILES.get('pdf')
         openalex_id = request.data.get('openalex_id', None)
 
@@ -156,13 +154,21 @@ def uploadconfirm(request):
         created_time = request.data.get('created_time', None)
         institution_display_name = request.data.get('institution_display_name', None)
         user = User.objects.get(id=uid)
-        author = Author.objects.create(
-            open_alex_id=openalex_id,
-            real_name=real_name,
-            work_count=work_count,
-            institution_display_name=institution_display_name,
-            created_time=created_time
-        )
+        user.true_man = image
+        user.save()
+        user.true_man_url = 'http://121.36.19.201/media/' + str(user.true_man)
+        user.save()
+        author = Author.objects.filter(open_alex_id=openalex_id)
+        if not author.exists():
+            author = Author.objects.create(
+                open_alex_id=openalex_id,
+                real_name=real_name,
+                work_count=work_count,
+                institution_display_name=institution_display_name,
+                created_time=created_time
+            )
+        else:
+            author=author.first()
         administrators = User.objects.filter(is_staff=True)
         for administrator in administrators:
             message = Message.objects.create(
@@ -199,7 +205,10 @@ def examine(request):
     data = request.data.get('data')
     try:
         message = Message.objects.get(id=mid)
-        if data == '1':
+        print(data)
+        data=int(data)
+        if data == 1:
+            print("yes")
             message.sender.author = message.author
             message.sender.is_professional = 1
             message.sender.save()

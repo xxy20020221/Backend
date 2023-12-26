@@ -15,6 +15,8 @@ from rest_framework import generics,viewsets,permissions,status
 import copy
 from UserManage.models import History, User, AuthorName
 from utils.tools import list_model_to_dict
+from .models import Work,Author
+import random
 #TODO 目前cache是保存所有信息，不知道会不会有缓存炸的情况，接下来要处理缓存里处理的信息缓解压力
 def cache_get_value(type,params,per_page,pages):
     
@@ -26,9 +28,11 @@ def cache_get_value(type,params,per_page,pages):
     
     if value is None:
         print("cache not found, find via api")
+        
         try:
             # 获取文章
             value = list(api_caller.get_all(type,params,per_page=int(per_page),pages=[int(pages)]))
+
             value = value[0]
 
             # 获取每个类型的数量  这个要增加很长的搜索时间，考虑展示的时候要不要优化掉
@@ -187,9 +191,11 @@ def get_works(request):
     
     if(isAutoComplete):
         base_url = "autocomplete/" + base_url
-
+    
     if(single_object_id):
+        print(single_object_id)
         value = get_single_object(base_url,single_object_id)
+        print(user_id)
         if user_id is not None:
             name = value['authorships']
             names = ''
@@ -197,6 +203,8 @@ def get_works(request):
             for n in name:
                 names = names + n['author']['display_name'] + ','
                 tmp.append(n['author']['display_name'])
+            num1 = random.randint(0,len(value['related_works'])-1)
+            num2 = random.randint(0,len(value['related_works'])-1)
             history = History.objects.create(
                 user=request.user,
                 title=value['title'],
@@ -204,8 +212,11 @@ def get_works(request):
                 language=value['language'],
                 open_alex_id=single_object_id,
                 cited_by_count=value['cited_by_count'],
-                author_name=names
+                author_name=names,
+                related_work_1=value['related_works'][num1],
+                related_work_2=value['related_works'][num2],
             )
+            print(history)
             for t in tmp:
                 AuthorName.objects.create(
                     history=history,
@@ -235,15 +246,19 @@ def get_works(request):
 
             elif key == 'concepts.display_name':
                 search_filter = f"display_name.search:{value}"
-                search_param = {'filter': search_filter, 'select': "id"}
-                value_response = cache_get_value_not_paged("concepts", search_param)
+                per_page = 3
+                search_param = {'filter': search_filter, 'select': "id",'sort':'relevance_score:desc','per_page':per_page,'page':1}
+                value_response = cache_get_value("concepts", search_param,per_page=per_page,pages=1)
                 ids = '|'.join([str(concept['id']) for concept in value_response['results']])
                 final_filter = final_filter.replace(item, f"concepts.id:{ids}")
 
             elif key == 'locations.source.display_name':
                 search_filter = f"display_name.search:{value}"
-                search_param = {'filter': search_filter, 'select': "id"}
-                value_response = cache_get_value_not_paged("sources", search_param)
+                per_page = 2
+                search_param = {'filter': search_filter, 'select': "id",'sort':'relevance_score:desc','per_page':per_page,'page':1}
+                print(search_param)
+                
+                value_response = cache_get_value("sources", search_param,per_page=per_page,pages=1)
                 ids = '|'.join([str(concept['id']) for concept in value_response['results']])
                 final_filter = final_filter.replace(item, f"locations.source.id:{ids}")
 
@@ -298,25 +313,26 @@ def get_authors(request):
 
     if advanced:
         # 遍历 final_filter 中的每个项目
-        for item in final_filter.split(','):
-            key, value = item.split(':')
+        if(final_filter!=None):
+            for item in final_filter.split(','):
+                key, value = item.split(':')
 
-            # 处理不同的属性
-            if key == 'last_known_institution.display_name':
-                search_filter = f"display_name.search:{value}"
-                search_param = {'filter': search_filter, 'select': "id"}
-                value_response = cache_get_value_not_paged("institutions", search_param)
-                ids = '|'.join([str(inst['id']) for inst in value_response['results']])
-                final_filter = final_filter.replace(item, f"last_known_institution.id:{ids}")
+                # 处理不同的属性
+                if key == 'last_known_institution.display_name':
+                    search_filter = f"display_name.search:{value}"
+                    search_param = {'filter': search_filter, 'select': "id"}
+                    value_response = cache_get_value_not_paged("institutions", search_param)
+                    ids = '|'.join([str(inst['id']) for inst in value_response['results']])
+                    final_filter = final_filter.replace(item, f"last_known_institution.id:{ids}")
 
-            elif key == 'x_concepts.display_name':
-                search_filter = f"display_name.search:{value}"
-                search_param = {'filter': search_filter, 'select': "id"}
-                value_response = cache_get_value_not_paged("concepts", search_param)
-                ids = '|'.join([str(concept['id']) for concept in value_response['results']])
-                final_filter = final_filter.replace(item, f"x_concepts.id:{ids}")
+                elif key == 'x_concepts.display_name':
+                    search_filter = f"display_name.search:{value}"
+                    search_param = {'filter': search_filter, 'select': "id"}
+                    value_response = cache_get_value_not_paged("concepts", search_param)
+                    ids = '|'.join([str(concept['id']) for concept in value_response['results']])
+                    final_filter = final_filter.replace(item, f"x_concepts.id:{ids}")
 
-        params['filter'] = final_filter
+            params['filter'] = final_filter
 
     per_page = params.get('per_page', 25)
     pages = params.get('page', 1)
@@ -442,7 +458,7 @@ def analyze_edges(request):
     
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def show_history(request):
     user_id = request.user.id
     histories = History.objects.filter(user=user_id)
@@ -453,3 +469,25 @@ def show_history(request):
         history['name'] = list_model_to_dict(names)
         need.append(history)
     return Response(need, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def get_work_by_open(request):
+    open_alex = request.data.get('open_alex_id')
+    try:
+        print(open_alex)
+        work = Work.objects.get(open_alex_id=open_alex)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({"id": work.id}, status=status.HTTP_201_CREATED)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def get_author_avatar(request):
+    open_alex = request.data.get('open_alex_id')
+    try:
+        author = Author.objects.get(open_alex_id=open_alex)
+        user = User.objects.get(author=author)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({"url": user.true_man_url}, status=status.HTTP_201_CREATED)
